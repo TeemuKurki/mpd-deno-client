@@ -25,7 +25,6 @@ jobs:
         run: deno lint
 
       #- name: Run tests
-      #  working-directory: "./packages/clients/deno"
       #  run: deno test -A
   publish:
     permissions:
@@ -43,5 +42,4 @@ jobs:
           deno-version: v2.x
 
       - name: Publish package
-        working-directory: "./packages/clients/deno"
         run: deno publish
