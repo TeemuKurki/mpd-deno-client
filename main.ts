@@ -1,18 +1,13 @@
 import { concat, endsWith, includesNeedle } from "@std/bytes";
 import { assertExists } from "@std/assert";
 
-type Falsy = false | undefined;
-
 export interface TCPConnection {
-  read: (buffer: Uint8Array) => Promise<number | null>;
-  readAll: {
-    (): Promise<string>;
-    (getInBinary: Falsy): Promise<string>;
-    (getInBinary: true): Promise<Uint8Array>;
-    (getInBinary?: boolean): Promise<string | Uint8Array>;
-  };
+  sendCommand: (command: string, immediate?: boolean) => Promise<string>;
+  sendBinaryCommand: (
+    command: string,
+    immediate?: boolean,
+  ) => Promise<Uint8Array>;
   close: () => void;
-  write: (data: Uint8Array) => Promise<number>;
 }
 
 const MSG_END_BIN = [
@@ -73,37 +68,23 @@ export class TCPClient implements TCPConnection {
     this.#connection.close();
   }
 
-  /**
-   * Read data from the connection into a buffer
-   * @param buffer
-   * @returns Number of bytes read during the operation or EOF (null) if there was nothing more to read.
-   */
-  read(buffer: Uint8Array): Promise<number | null> {
+  async sendBinaryCommand(
+    command: string,
+    immediate?: boolean,
+  ): Promise<Uint8Array> {
     assertExists(this.#connection, "No open connections");
-    return this.#connection.read(buffer);
-  }
-  /**
-   * Read all data from the connection. Reading ends when response line reads `OK\n` or `ACK `
-   * @param getInBinary If true, data returned as Uint8Array. Otherwise data returned as string
-   * @returns MPD response
-   */
-  async readAll(): Promise<string>;
-  async readAll(getInBinary: true): Promise<Uint8Array>;
-  async readAll(getInBinary?: boolean): Promise<string | Uint8Array> {
-    assertExists(this.#connection, "No open connections");
-    const data = await getResponse(this.#connection);
-    if (getInBinary) {
-      return data;
+    const buffer = new TextEncoder().encode(command);
+    this.#connection.write(buffer);
+    if (immediate) {
+      const resultBuffer = new Uint8Array(128);
+      await this.#connection.read(resultBuffer);
+      return resultBuffer;
     }
-    return new TextDecoder().decode(data);
+    return await getResponse(this.#connection);
   }
-  /**
-   * Writes data into connection
-   * @param data Input data
-   * @returns Number of bytes written
-   */
-  write(data: Uint8Array): Promise<number> {
-    assertExists(this.#connection, "No open connections");
-    return this.#connection.write(data);
+
+  async sendCommand(command: string, immediate?: boolean): Promise<string> {
+    const data = await this.sendBinaryCommand(command, immediate);
+    return new TextDecoder().decode(data);
   }
 }
