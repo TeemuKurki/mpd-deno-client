@@ -77,7 +77,8 @@ export class TCPClient implements TCPConnection {
     this.#connection.write(buffer);
     if (immediate) {
       const resultBuffer = new Uint8Array(128);
-      await this.#connection.read(resultBuffer);
+      //TODO: handle noidle return value. Could be empty
+      this.#connection.read(resultBuffer);
       return resultBuffer;
     }
     return await getResponse(this.#connection);
