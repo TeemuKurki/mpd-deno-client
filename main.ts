@@ -1,18 +1,6 @@
 import { concat, endsWith, includesNeedle } from "@std/bytes";
 import { assertExists } from "@std/assert";
 
-/**
- * TCPClient interfate
- */
-export interface TCPConnection {
-  sendCommand: (command: string, immediate?: boolean) => Promise<string>;
-  sendBinaryCommand: (
-    command: string,
-    immediate?: boolean,
-  ) => Promise<Uint8Array>;
-  close: () => void;
-}
-
 const MSG_END_BIN = [
   new TextEncoder().encode("OK\n"),
   new TextEncoder().encode("ACK "),
@@ -43,8 +31,26 @@ const getResponse = async (conn: Deno.TcpConn) => {
 
 /**
  * Deno TCP Client for MPD Client
+ *
+ * @example Usage
+ * ```ts
+ * import { TCPClient } from "@teemukurki/mpd-deno-client";
+ * import { MPDClient } from "@teemukurki/mpd";
+ *
+ * const MPD_HOST = "localhost";
+ * const MPD_PORT = 6600;
+ *
+ * const client = MPDClient.init(
+ *  TCPClient,
+ *  MPD_HOST,
+ *  MPD_PORT,
+ * );
+ *
+ * const status = await client.status();
+ * console.log(status);
+ * ```
  */
-export class TCPClient implements TCPConnection {
+export class TCPClient {
   #connection: Deno.TcpConn;
   /**
    * Creates a new instance of TCP Client
