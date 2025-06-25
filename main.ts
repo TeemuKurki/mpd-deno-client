@@ -1,6 +1,9 @@
 import { concat, endsWith, includesNeedle } from "@std/bytes";
 import { assertExists } from "@std/assert";
 
+/**
+ * TCPClient interfate
+ */
 export interface TCPConnection {
   sendCommand: (command: string, immediate?: boolean) => Promise<string>;
   sendBinaryCommand: (
@@ -43,6 +46,10 @@ const getResponse = async (conn: Deno.TcpConn) => {
  */
 export class TCPClient implements TCPConnection {
   #connection: Deno.TcpConn;
+  /**
+   * Creates a new instance of TCP Client
+   * @param connection
+   */
   constructor(connection: Deno.TcpConn) {
     this.#connection = connection;
   }
@@ -68,6 +75,13 @@ export class TCPClient implements TCPConnection {
     this.#connection.close();
   }
 
+  /**
+   * Calls MPD server and waits for response
+   *
+   * @param command MPD command
+   * @param immediate if true, do not wait for response
+   * @returns MPD server response as Uint8Array
+   */
   async sendBinaryCommand(
     command: string,
     immediate?: boolean,
@@ -84,6 +98,13 @@ export class TCPClient implements TCPConnection {
     return await getResponse(this.#connection);
   }
 
+  /**
+   * Calls MPD server and waits for response
+   *
+   * @param command MPD command
+   * @param immediate if true, do not wait for response
+   * @returns MPD server response as string
+   */
   async sendCommand(command: string, immediate?: boolean): Promise<string> {
     const data = await this.sendBinaryCommand(command, immediate);
     return new TextDecoder().decode(data);
